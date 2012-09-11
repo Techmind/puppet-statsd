@@ -1,7 +1,7 @@
 class statsd ($graphite_host = "localhost", $graphite_port = 2003, $port = 8125, $debug = 0, $flush_interval = 60000) {
 	$init_command = $operatingsystem ? {
                 OpenSuSE  => "/etc/init.d/statsd restart",
-                default => ""/sbin/stop statsd; /sbin/start statsd"",
+                default => "/sbin/stop statsd; /sbin/start statsd",
         }
 	$init_file = $operatingsystem ? {
                 OpenSuSE  => "/etc/init.d/statsd",
@@ -21,15 +21,26 @@ class statsd ($graphite_host = "localhost", $graphite_port = 2003, $port = 8125,
                 default => "nodejs-compat-symlinks",
         }
 
-	package { $main_package:
-		ensure => present;
-	}
+	if ($operatingsystem != "OpenSuSE") {
+                package {
+                        "npm":
+                                require => Package[$main_package],
+                                ensure => present;
+                }
+                package { $main_package:
+                        ensure => present;
+                }
+
+
+        } else {
+                package { $main_package:
+                        ensure => present,
+                        alias => "npm";
+                }
+        }
 	package {
 		$development_packages:
 			require => Package[$development_packages],
-			ensure => present;
-		"npm":
-			require => Package[$main_package],
 			ensure => present;
 	}
 	exec { "npm-statsd":
@@ -45,7 +56,7 @@ class statsd ($graphite_host = "localhost", $graphite_port = 2003, $port = 8125,
                 	ensure => file,
 			owner   => "root",
 			group   => "root",
-			mode    => "0644",
+			mode    => $operatingsystem ? { OpenSuSE  => "0744", default => "0644"},
                 	source => $init_file_source;
 
 		"/etc/statsd.js":
