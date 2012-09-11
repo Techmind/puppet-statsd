@@ -40,7 +40,7 @@ class statsd ($graphite_host = "localhost", $graphite_port = 2003, $port = 8125,
         }
 	package {
 		$development_packages:
-			require => Package[$development_packages],
+			require => Package[$main_package],
 			ensure => present;
 	}
 	exec { "npm-statsd":
